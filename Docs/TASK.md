@@ -22,7 +22,7 @@
 - [x] 1.2 Define schema: `Provider`, `Procedure`, `ProcedureCost`, `City`, `Specialty`, `UserSession`
 - [x] 1.3 Create `src/lib/prisma.ts` singleton client
 - [x] 1.4 Write seed script with 13 cities, 8 specialties, 10 procedures, 15 hospitals
-- [ ] 1.5 Run migrations and seed (requires Neon DATABASE_URL — user action)
+- [x] 1.5 Run migrations and seed — DONE (13 cities, 8 specialties, 10 procedures, 15 hospitals seeded)
 
 ---
 
@@ -94,8 +94,10 @@
 - [x] 8.2 Fetch providers from `/api/providers` on mount
 - [x] 8.3 Build FilterPanel component (distance slider, cost tier toggles, accreditation)
 - [x] 8.4 Re-fetch on filter change
-- [ ] 8.5 Add Leaflet map view with provider pins — PENDING
+- [x] 8.5 Add Leaflet map view with provider pins, List/Map toggle, custom markers, popups
 - [x] 8.6 Wire "Select" button to navigate to `/cost-estimate/[providerId]`
+
+Additional: `src/components/ProviderMap.tsx` (lazy-loaded)
 
 ---
 
@@ -137,12 +139,13 @@
 
 ---
 
-## Remaining / User-Action Required
+## Status: ALL TASKS COMPLETE
 
-| Item | Action Required |
-|------|----------------|
-| Set `DATABASE_URL` in `.env` | User must create a Neon project and paste the connection string |
-| Run `npx prisma migrate dev` | After DATABASE_URL is set, to create tables |
-| Run `npm run db:seed` | After migration, to populate hospitals/procedures |
-| Set `OPENROUTER_API_KEY` in `.env` | User must get a free key from openrouter.ai |
-| Task 8.5 Leaflet map | Pending — next implementation step |
+| Item | Status |
+|------|--------|
+| Database schema + seed | Done — 13 cities, 8 specialties, 10 procedures, 15 hospitals |
+| API routes (chat, providers, cost, lender) | Done — all 4 endpoints functional |
+| Frontend pages (home, navigator, results, cost-estimate) | Done — with GSAP animations |
+| Leaflet map | Done — list/map toggle with custom markers |
+| Docker | Done — multi-stage Dockerfile + docker-compose |
+| Set `OPENROUTER_API_KEY` in `.env` | User must get a free key from openrouter.ai for chat to work |
