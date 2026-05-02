@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import SmoothScroll from "@/components/SmoothScroll";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useJourneyStore } from "@/store/useJourneyStore";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const router = useRouter();
+  const [inputValue, setInputValue] = useState("");
   const heroRef = useRef<HTMLDivElement>(null);
   const textRefs = useRef<(HTMLHeadingElement | null)[]>([]);
   const featureRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const setQuery = useJourneyStore((s) => s.setQuery);
 
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/results");
+    if (inputValue.trim()) {
+      setQuery(inputValue.trim());
+      router.push("/navigator");
+    }
   };
 
   useEffect(() => {
@@ -102,6 +108,8 @@ export default function Home() {
               </div>
               <input 
                 type="text" 
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 placeholder="E.g., I have sharp pain in my left knee when walking..." 
                 className="w-full pl-16 pr-40 py-6 rounded-full bg-surface border-2 border-foreground/5 text-xl shadow-lg shadow-primary/5 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all duration-300"
               />

@@ -5,9 +5,10 @@ interface ProviderProps {
   tier: "budget" | "mid" | "premium";
   estimate: string;
   tags: string[];
+  onSelect?: () => void;
 }
 
-export default function ProviderCard({ name, distance, score, tier, estimate, tags }: ProviderProps) {
+export default function ProviderCard({ name, distance, score, tier, estimate, tags, onSelect }: ProviderProps) {
   const tierSigns = { budget: "₹", mid: "₹₹", premium: "₹₹₹" };
 
   return (
@@ -36,7 +37,7 @@ export default function ProviderCard({ name, distance, score, tier, estimate, ta
           <div className="text-xs text-foreground/50 uppercase tracking-wider mb-1">Est. Cost Range</div>
           <div className="text-lg font-medium text-foreground">{estimate}</div>
         </div>
-        <button className="text-primary font-medium text-sm flex items-center gap-1 group-hover:underline">
+        <button onClick={onSelect} className="text-primary font-medium text-sm flex items-center gap-1 group-hover:underline cursor-pointer">
           Select
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

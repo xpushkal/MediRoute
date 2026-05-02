@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

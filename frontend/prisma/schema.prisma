@@ -1,0 +1,154 @@
+// MediRoute AI — Database Schema
+// Prisma 7 + Neon PostgreSQL
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── City & Geography ───────────────────────────────────────────────────
+
+model City {
+  id        String   @id @default(cuid())
+  name      String
+  state     String
+  tier      CityTier
+  latitude  Float
+  longitude Float
+  pricingFactor Float @default(1.0) // Metro=1.2, Tier2=1.0, Tier3=0.8
+
+  providers Provider[]
+
+  @@unique([name, state])
+}
+
+enum CityTier {
+  METRO
+  TIER_2
+  TIER_3
+}
+
+// ─── Provider (Hospital / Clinic) ───────────────────────────────────────
+
+model Provider {
+  id              String   @id @default(cuid())
+  name            String
+  type            ProviderType
+  address         String
+  latitude        Float
+  longitude       Float
+  phone           String?
+  website         String?
+
+  // Ranking signals
+  tier            HospitalTier
+  nabh            Boolean  @default(false)
+  jci             Boolean  @default(false)
+  bedCount        Int      @default(0)
+  rating          Float    @default(0)  // 0-5 aggregate public rating
+  reviewCount     Int      @default(0)
+
+  // Relations
+  cityId          String
+  city            City     @relation(fields: [cityId], references: [id])
+  specializations ProviderSpecialization[]
+  procedureCosts  ProcedureCost[]
+  strengths       String[] // e.g. ["High Cardiac Volume", "Budget-Friendly"]
+
+  @@index([cityId])
+}
+
+enum ProviderType {
+  HOSPITAL
+  CLINIC
+  DIAGNOSTIC_CENTER
+}
+
+enum HospitalTier {
+  BUDGET
+  MID
+  PREMIUM
+}
+
+// ─── Medical Specialty ──────────────────────────────────────────────────
+
+model Specialty {
+  id   String @id @default(cuid())
+  name String @unique // e.g. "Cardiology", "Orthopaedics"
+
+  procedures      Procedure[]
+  providers       ProviderSpecialization[]
+}
+
+model ProviderSpecialization {
+  id          String   @id @default(cuid())
+  providerId  String
+  specialtyId String
+  volumeProxy Int      @default(0) // procedures performed (proxy)
+
+  provider  Provider  @relation(fields: [providerId], references: [id])
+  specialty Specialty @relation(fields: [specialtyId], references: [id])
+
+  @@unique([providerId, specialtyId])
+}
+
+// ─── Procedure & Cost Benchmarks ────────────────────────────────────────
+
+model Procedure {
+  id          String @id @default(cuid())
+  name        String // e.g. "Angioplasty"
+  icd10Code   String // e.g. "I25.1"
+  snomedCode  String? // optional SNOMED CT
+  category    String // e.g. "Cardiac", "Orthopaedic"
+  description String?
+
+  specialtyId String
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+
+  // Base cost range (mid-tier, metro baseline)
+  baseCostMin Int // in INR
+  baseCostMax Int
+
+  // Component percentages (of total)
+  surgeonFeePercent    Float @default(0.15)
+  anaesthesiaPercent   Float @default(0.08)
+  diagnosticsPercent   Float @default(0.06)
+  medicationPercent    Float @default(0.10)
+  stayPerDayMin        Int   @default(3000) // per day room cost
+  stayPerDayMax        Int   @default(8000)
+  expectedStayDays     Int   @default(3)
+
+  costs ProcedureCost[]
+
+  @@unique([icd10Code])
+}
+
+model ProcedureCost {
+  id          String  @id @default(cuid())
+  providerId  String
+  procedureId String
+  costMin     Int     // provider-specific min
+  costMax     Int     // provider-specific max
+  waitDays    Int     @default(7) // estimated appointment wait
+
+  provider  Provider  @relation(fields: [providerId], references: [id])
+  procedure Procedure @relation(fields: [procedureId], references: [id])
+
+  @@unique([providerId, procedureId])
+}
+
+// ─── User Sessions (Anonymized) ─────────────────────────────────────────
+
+model UserSession {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  query         String   // original user query
+  mappedIcd10   String?
+  confidence    Float?
+  city          String?
+  disclaimerAck Boolean  @default(false)
+}
