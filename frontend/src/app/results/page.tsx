@@ -27,25 +27,22 @@ export default function Results() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stable dependency key to prevent over-fetching
-  const fetchKey = JSON.stringify({
-    loc: clinicalState.location,
-    icd: clinicalState.icd10Code,
-    proc: clinicalState.recommendedProcedure,
-    symp: clinicalState.symptoms.length,
-    filters,
-  });
+  // Derive stable primitives for dependency tracking
+  const fetchCity = clinicalState.location || "";
+  const fetchCondition = clinicalState.icd10Code || clinicalState.recommendedProcedure || "";
+  const fetchSymCount = clinicalState.symptoms.length;
+  const fetchMaxDist = filters.maxDistance;
+  const fetchTiers = filters.costTier.join(",");
+  const fetchAccred = filters.accreditation.join(",");
 
   // Fetch providers on mount / filter change
   useEffect(() => {
-    if (!clinicalState.location && clinicalState.symptoms.length === 0) return;
+    if (!fetchCity && fetchSymCount === 0) return;
 
-    const city = clinicalState.location || "Pune";
-    const condition = clinicalState.icd10Code || clinicalState.recommendedProcedure || "";
-
-    const params = new URLSearchParams({ city, condition, maxDistance: String(filters.maxDistance) });
-    filters.costTier.forEach((t) => params.append("tier", t));
-    filters.accreditation.forEach((a) => params.append("accreditation", a));
+    const city = fetchCity || "Pune";
+    const params = new URLSearchParams({ city, condition: fetchCondition, maxDistance: String(fetchMaxDist) });
+    fetchTiers.split(",").filter(Boolean).forEach((t) => params.append("tier", t));
+    fetchAccred.split(",").filter(Boolean).forEach((a) => params.append("accreditation", a));
 
     setLoading(true);
     fetch(`/api/providers?${params.toString()}`)
@@ -58,7 +55,7 @@ export default function Results() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [fetchKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchCity, fetchCondition, fetchSymCount, fetchMaxDist, fetchTiers, fetchAccred]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!loading && headerRef.current) {
