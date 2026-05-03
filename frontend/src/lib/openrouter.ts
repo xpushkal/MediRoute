@@ -12,7 +12,44 @@ export const OPENROUTER_CONFIG = {
   apiKey: process.env.OPENROUTER_API_KEY || "",
 };
 
+// ── Rate Limiter (in-memory, per IP) ────────────────────────────────────
+
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX = 15;       // max requests per window
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+
+export function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  entry.count += 1;
+  return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count };
+}
+
+// ── API Key Validation ──────────────────────────────────────────────────
+
+export function validateApiKey(): void {
+  if (!OPENROUTER_CONFIG.apiKey) {
+    throw new Error(
+      "OPENROUTER_API_KEY is not set. Please add it to your .env file. " +
+      "Get a free key from https://openrouter.ai"
+    );
+  }
+}
+
+// ── OpenRouter Call (non-streaming) ─────────────────────────────────────
+
 export async function callOpenRouter(messages: { role: string; content: string }[]) {
+  validateApiKey();
   let lastError: Error | null = null;
 
   for (const model of FREE_MODELS) {
@@ -41,6 +78,14 @@ export async function callOpenRouter(messages: { role: string; content: string }
       }
 
       const data = await res.json();
+
+      // Validate response structure
+      if (!data.choices?.[0]?.message?.content) {
+        console.warn(`Model ${model} returned empty content, trying next...`);
+        lastError = new Error(`Model ${model} returned no content`);
+        continue;
+      }
+
       console.log(`Using model: ${model}`);
       return data;
     } catch (e) {
@@ -53,7 +98,10 @@ export async function callOpenRouter(messages: { role: string; content: string }
   throw lastError || new Error("All models failed");
 }
 
+// ── OpenRouter Streaming ────────────────────────────────────────────────
+
 export async function streamOpenRouter(messages: { role: string; content: string }[]) {
+  validateApiKey();
   let lastError: Error | null = null;
 
   for (const model of FREE_MODELS) {

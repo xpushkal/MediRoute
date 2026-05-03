@@ -55,11 +55,11 @@ export function computeRankingScore(input: RankingInput, weights = DEFAULT_WEIGH
   scores.accreditation = input.accreditationScore * 100;
 
   // 6. Distance (inverse — closer is better)
-  scores.distance = input.maxDistanceKm > 0
+  scores.distance = input.maxDistanceKm > 0 && input.distanceKm >= 0
     ? Math.max(0, (1 - input.distanceKm / input.maxDistanceKm)) * 100 : 50;
 
   // 7. Wait time (inverse — shorter is better, cap at 30 days)
-  scores.waitTime = Math.max(0, (1 - input.waitDays / 30)) * 100;
+  scores.waitTime = Math.max(0, (1 - Math.min(input.waitDays, 30) / 30)) * 100;
 
   // 8. Affordability (tier-based)
   scores.affordability = input.hospitalTierScore * 100;

@@ -20,8 +20,17 @@ export default function Results() {
 
   const { clinicalState, providers, setProviders, filters, setSelectedProvider } = useJourneyStore();
 
+  // Redirect to navigator if no clinical context exists
+  useEffect(() => {
+    if (!clinicalState.location && clinicalState.symptoms.length === 0) {
+      router.replace("/navigator");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch providers on mount / filter change
   useEffect(() => {
+    if (!clinicalState.location && clinicalState.symptoms.length === 0) return;
+
     const city = clinicalState.location || "Pune";
     const condition = clinicalState.icd10Code || clinicalState.recommendedProcedure || "";
 

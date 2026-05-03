@@ -6,6 +6,7 @@ import {
   getAffordabilityScore,
   haversineDistance,
 } from "@/lib/ranking-engine";
+import { formatINRSmart } from "@/lib/cost-engine";
 
 export async function GET(req: NextRequest) {
   try {
@@ -82,12 +83,18 @@ export async function GET(req: NextRequest) {
         ? p.specializations.find((s) => s.specialtyId === targetProcedure.specialtyId)?.volumeProxy || 0
         : Math.max(...p.specializations.map((s) => s.volumeProxy), 0);
 
+      // Derive review sentiment from rating and review count
+      // Instead of hardcoded 0.7, use a formula that rewards both high ratings and many reviews
+      const ratingNorm = p.rating / 5;           // 0-1
+      const reviewConfidence = Math.min(p.reviewCount / 1000, 1); // caps at 1000+ reviews
+      const derivedSentiment = ratingNorm * 0.7 + reviewConfidence * 0.3; // weighted blend
+
       const { composite, breakdown } = computeRankingScore({
         specializationRelevance: hasSpecialty,
         procedureVolume: volume,
         maxVolume,
         aggregateRating: p.rating,
-        reviewSentiment: 0.7,
+        reviewSentiment: derivedSentiment,
         accreditationScore: getAccreditationScore(p.nabh, p.jci),
         distanceKm: p.distance,
         maxDistanceKm: maxDist,
@@ -95,10 +102,29 @@ export async function GET(req: NextRequest) {
         hospitalTierScore: getAffordabilityScore(p.tier),
       });
 
-      // Find cost for the target procedure
-      const costEntry = targetProcedure
-        ? p.procedureCosts.find((c) => c.procedureId === targetProcedure.id)
-        : p.procedureCosts[0];
+      // Find cost for the target procedure — only match by specialty, not arbitrary fallback
+      let costEntry = null;
+      if (targetProcedure) {
+        costEntry = p.procedureCosts.find((c) => c.procedureId === targetProcedure.id);
+      }
+      if (!costEntry && targetProcedure) {
+        // Try to find any procedure in the same specialty
+        costEntry = p.procedureCosts.find((c) =>
+          p.specializations.some(
+            (s) => s.specialtyId === targetProcedure.specialtyId &&
+              c.procedure.specialtyId === targetProcedure.specialtyId
+          )
+        );
+      }
+      // Only fall back to first cost if no specific procedure was requested
+      if (!costEntry && !targetProcedure) {
+        costEntry = p.procedureCosts[0];
+      }
+
+      // Smart INR formatting
+      const costEstimate = costEntry
+        ? `${formatINRSmart(costEntry.costMin)} – ${formatINRSmart(costEntry.costMax)}`
+        : "Contact hospital";
 
       return {
         id: p.id,
@@ -117,9 +143,7 @@ export async function GET(req: NextRequest) {
         scoreBreakdown: breakdown,
         costMin: costEntry?.costMin || 0,
         costMax: costEntry?.costMax || 0,
-        costEstimate: costEntry
-          ? `₹${(costEntry.costMin / 100000).toFixed(1)}L – ₹${(costEntry.costMax / 100000).toFixed(1)}L`
-          : "N/A",
+        costEstimate,
         waitDays: costEntry?.waitDays || 7,
         strengths: p.strengths,
       };

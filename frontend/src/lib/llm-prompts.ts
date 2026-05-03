@@ -67,27 +67,59 @@ export const ClinicalIntentSchema = z.object({
 
 export type ClinicalIntent = z.infer<typeof ClinicalIntentSchema>;
 
+// ── JSON Repair Utilities ───────────────────────────────────────────────
+
+function repairJSON(raw: string): string {
+  let s = raw.trim();
+  // Remove trailing commas before } or ]
+  s = s.replace(/,\s*([}\]])/g, "$1");
+  // Replace single quotes with double quotes (but not within strings)
+  s = s.replace(/'/g, '"');
+  // Fix unquoted keys: { key: "value" } → { "key": "value" }
+  s = s.replace(/(\{|,)\s*([a-zA-Z_]\w*)\s*:/g, '$1"$2":');
+  // Remove control characters
+  s = s.replace(/[\x00-\x1F\x7F]/g, (ch) => (ch === "\n" || ch === "\t" ? ch : ""));
+  return s;
+}
+
+function tryParseAndValidate(jsonStr: string): ClinicalIntent | null {
+  const attempts = [jsonStr, repairJSON(jsonStr)];
+  for (const attempt of attempts) {
+    try {
+      const parsed = JSON.parse(attempt);
+      const result = ClinicalIntentSchema.safeParse(parsed);
+      if (result.success) return result.data;
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
 // ── Parse JSON from LLM response ───────────────────────────────────────
 
 export function extractClinicalJSON(text: string): ClinicalIntent | null {
-  // Try fenced JSON block first
-  const fenced = text.match(/```json\s*([\s\S]*?)```/);
+  // Strategy 1: Fenced JSON block (```json ... ```)
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenced) {
-    try {
-      const parsed = JSON.parse(fenced[1]);
-      const result = ClinicalIntentSchema.safeParse(parsed);
-      if (result.success) return result.data;
-    } catch { /* fall through */ }
+    const result = tryParseAndValidate(fenced[1]);
+    if (result) return result;
   }
 
-  // Try raw JSON object in response (some models skip the fence)
+  // Strategy 2: Raw JSON object containing both "symptoms" and "confidence"
   const raw = text.match(/\{[\s\S]*"symptoms"[\s\S]*"confidence"[\s\S]*\}/);
   if (raw) {
-    try {
-      const parsed = JSON.parse(raw[0]);
-      const result = ClinicalIntentSchema.safeParse(parsed);
-      if (result.success) return result.data;
-    } catch { /* ignore */ }
+    const result = tryParseAndValidate(raw[0]);
+    if (result) return result;
+  }
+
+  // Strategy 3: Find any JSON object and check if it has the required fields
+  const anyJSON = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+  if (anyJSON) {
+    for (const candidate of anyJSON) {
+      if (candidate.includes("symptoms") || candidate.includes("confidence")) {
+        const result = tryParseAndValidate(candidate);
+        if (result) return result;
+      }
+    }
   }
 
   return null;

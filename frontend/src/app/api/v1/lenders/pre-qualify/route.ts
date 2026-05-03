@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Demo API key for hackathon — in production this would be per-partner
+const DEMO_API_KEY = process.env.LENDER_API_KEY || "medi-lender-demo-key-2025";
+
 export async function POST(req: NextRequest) {
   try {
-    // Check API key
+    // Check API key (accept demo key if env not set)
     const apiKey = req.headers.get("x-api-key");
-    if (apiKey !== process.env.LENDER_API_KEY) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!apiKey || apiKey !== DEMO_API_KEY) {
+      return NextResponse.json(
+        { error: "Unauthorized. Provide a valid x-api-key header." },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
@@ -20,6 +26,13 @@ export async function POST(req: NextRequest) {
 
     // Mock pre-qualification logic
     const amount = Number(estimatedAmount);
+    if (isNaN(amount) || amount <= 0) {
+      return NextResponse.json(
+        { error: "estimatedAmount must be a positive number" },
+        { status: 400 }
+      );
+    }
+
     const approved = amount <= 500000; // auto-approve under 5 lakh
     const maxApproved = approved ? Math.min(amount * 1.2, 600000) : 0;
 
