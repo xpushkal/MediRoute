@@ -27,6 +27,15 @@ export default function Results() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Stable dependency key to prevent over-fetching
+  const fetchKey = JSON.stringify({
+    loc: clinicalState.location,
+    icd: clinicalState.icd10Code,
+    proc: clinicalState.recommendedProcedure,
+    symp: clinicalState.symptoms.length,
+    filters,
+  });
+
   // Fetch providers on mount / filter change
   useEffect(() => {
     if (!clinicalState.location && clinicalState.symptoms.length === 0) return;
@@ -40,13 +49,16 @@ export default function Results() {
 
     setLoading(true);
     fetch(`/api/providers?${params.toString()}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Server error (${r.status})`);
+        return r.json();
+      })
       .then((data) => {
         if (data.providers) setProviders(data.providers);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [clinicalState, filters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!loading && headerRef.current) {

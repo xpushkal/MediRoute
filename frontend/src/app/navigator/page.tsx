@@ -26,8 +26,10 @@ export default function Navigator() {
   const containerRef = useRef<HTMLDivElement>(null);
   const initRef = useRef(false);
 
+  const [urgencyAlert, setUrgencyAlert] = useState<string | null>(null);
+
   const {
-    query, chatHistory, addMessage, clinicalState, setClinicalState, setQuery,
+    query, chatHistory, addMessage, clinicalState, setClinicalState, setQuery, resetJourney,
   } = useJourneyStore();
 
   // Seed first message on mount (guarded against Strict Mode double-fire)
@@ -96,6 +98,11 @@ export default function Navigator() {
       }
 
       const data = await res.json();
+
+      // Show urgency alert if returned
+      if (data.urgencyAlert) {
+        setUrgencyAlert(data.urgencyAlert);
+      }
 
       const assistantMsg: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -178,9 +185,12 @@ export default function Navigator() {
               View Results
             </button>
           )}
-          <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+          <button
+            onClick={() => { resetJourney(); router.push("/"); }}
+            className="text-sm font-medium hover:text-primary transition-colors cursor-pointer"
+          >
             Start Over
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -208,6 +218,14 @@ export default function Navigator() {
         <div className="text-center text-xs text-foreground/40 mb-8 py-2 border-b border-foreground/5">
           I am an AI assistant helping you estimate costs and find hospitals. I cannot diagnose medical conditions.
         </div>
+
+        {/* Urgency Alert */}
+        {urgencyAlert && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
+            <span className="text-lg">🚨</span>
+            <p className="text-sm text-red-700 font-medium">{urgencyAlert}</p>
+          </div>
+        )}
 
         {chatHistory.map((msg) => (
           <ChatBubble key={msg.id} role={msg.role} content={msg.content} />

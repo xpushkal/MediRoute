@@ -20,7 +20,7 @@ async function main() {
   await query('DELETE FROM "City"');
   await query('DELETE FROM "UserSession"');
 
-  // ── Cities ──────────────────────────────────────────────────────────
+  // ── Cities (25 across India) ─────────────────────────────────────────
   const citiesData = [
     ["Mumbai", "Maharashtra", "METRO", 19.076, 72.8777, 1.3],
     ["Delhi", "Delhi", "METRO", 28.6139, 77.209, 1.3],
@@ -28,11 +28,23 @@ async function main() {
     ["Pune", "Maharashtra", "METRO", 18.5204, 73.8567, 1.1],
     ["Chennai", "Tamil Nadu", "METRO", 13.0827, 80.2707, 1.2],
     ["Hyderabad", "Telangana", "METRO", 17.385, 78.4867, 1.15],
+    ["Kolkata", "West Bengal", "METRO", 22.5726, 88.3639, 1.1],
+    ["Ahmedabad", "Gujarat", "METRO", 23.0225, 72.5714, 1.05],
     ["Nagpur", "Maharashtra", "TIER_2", 21.1458, 79.0882, 0.9],
     ["Jaipur", "Rajasthan", "TIER_2", 26.9124, 75.7873, 0.9],
     ["Lucknow", "Uttar Pradesh", "TIER_2", 26.8467, 80.9462, 0.85],
     ["Coimbatore", "Tamil Nadu", "TIER_2", 11.0168, 76.9558, 0.85],
     ["Bhopal", "Madhya Pradesh", "TIER_2", 23.2599, 77.4126, 0.8],
+    ["Chandigarh", "Punjab", "TIER_2", 30.7333, 76.7794, 0.95],
+    ["Kochi", "Kerala", "TIER_2", 9.9312, 76.2673, 0.9],
+    ["Visakhapatnam", "Andhra Pradesh", "TIER_2", 17.6868, 83.2185, 0.85],
+    ["Patna", "Bihar", "TIER_2", 25.6093, 85.1376, 0.8],
+    ["Indore", "Madhya Pradesh", "TIER_2", 22.7196, 75.8577, 0.8],
+    ["Thiruvananthapuram", "Kerala", "TIER_2", 8.5241, 76.9366, 0.85],
+    ["Guwahati", "Assam", "TIER_2", 26.1445, 91.7362, 0.8],
+    ["Varanasi", "Uttar Pradesh", "TIER_2", 25.3176, 82.9739, 0.75],
+    ["Surat", "Gujarat", "TIER_2", 21.1702, 72.8311, 0.85],
+    ["Mangalore", "Karnataka", "TIER_2", 12.9141, 74.856, 0.8],
     ["Raipur", "Chhattisgarh", "TIER_3", 21.2514, 81.6296, 0.7],
     ["Dehradun", "Uttarakhand", "TIER_3", 30.3165, 78.0322, 0.7],
   ] as const;
@@ -68,6 +80,11 @@ async function main() {
     { name: "Chemotherapy Cycle", icd10: "C80.1", cat: "Oncology", spec: "Oncology", desc: "One cycle of anti-cancer drug administration, including pre-medications, infusion, and monitoring for adverse reactions.", minC: 15000, maxC: 80000, sfp: 0.05, days: 1, sMin: 3000, sMax: 10000 },
     { name: "Kidney Stone Removal", icd10: "N20.0", cat: "Urology", spec: "Urology", desc: "Lithotripsy or ureteroscopic removal of renal calculi causing obstruction or pain in the urinary tract.", minC: 50000, maxC: 150000, sfp: 0.15, days: 2, sMin: 3000, sMax: 8000 },
     { name: "Herniated Disc Surgery", icd10: "M51.1", cat: "Neurology", spec: "Neurology", desc: "Microdiscectomy or laminectomy to relieve nerve compression caused by a prolapsed intervertebral disc.", minC: 150000, maxC: 400000, sfp: 0.20, days: 4, sMin: 4000, sMax: 12000 },
+    { name: "Hernia Repair Surgery", icd10: "K40.9", cat: "General", spec: "General Surgery", desc: "Laparoscopic or open mesh repair of inguinal, umbilical, or incisional hernia.", minC: 45000, maxC: 150000, sfp: 0.14, days: 2, sMin: 2500, sMax: 7000 },
+    { name: "TURP Surgery", icd10: "N40.0", cat: "Urology", spec: "Urology", desc: "Transurethral resection of the prostate for benign prostatic hyperplasia (BPH) causing urinary obstruction.", minC: 60000, maxC: 180000, sfp: 0.15, days: 3, sMin: 3000, sMax: 8000 },
+    { name: "Valve Replacement Surgery", icd10: "I35.0", cat: "Cardiac", spec: "Cardiology", desc: "Open-heart surgical replacement of damaged aortic or mitral valve with mechanical or biological prosthesis.", minC: 350000, maxC: 800000, sfp: 0.22, days: 8, sMin: 6000, sMax: 18000 },
+    { name: "Glaucoma Surgery", icd10: "H40.1", cat: "Ophthalmic", spec: "Ophthalmology", desc: "Trabeculectomy or tube shunt implantation to reduce intraocular pressure and prevent optic nerve damage.", minC: 30000, maxC: 100000, sfp: 0.18, days: 1, sMin: 2000, sMax: 5000 },
+    { name: "Fracture Fixation Surgery", icd10: "S72.0", cat: "Orthopaedic", spec: "Orthopaedics", desc: "Internal fixation of bone fractures using plates, screws, nails, or rods to stabilize and promote healing.", minC: 50000, maxC: 200000, sfp: 0.15, days: 4, sMin: 3000, sMax: 9000 },
   ];
 
   interface ProcRecord { id: string; name: string; specId: string; baseCostMin: number; baseCostMax: number; }
@@ -142,6 +159,54 @@ async function main() {
     // Dehradun (2 providers — NEW)
     { name: "Max Super Specialty Hospital", city: "Dehradun", tier: "PREMIUM", nabh: true, jci: false, beds: 200, rating: 4.2, reviews: 1200, lat: 30.3337, lng: 78.0423, addr: "Malsi, Mussoorie Rd, Dehradun", strengths: ["NABH Accredited", "Modern Infrastructure", "Premium Care"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Urology", "General Surgery"] },
     { name: "Doon Hospital", city: "Dehradun", tier: "BUDGET", nabh: false, jci: false, beds: 600, rating: 3.4, reviews: 1500, lat: 30.3224, lng: 78.0313, addr: "Rajpur Rd, Dehradun", strengths: ["Government Hospital", "Affordable", "Emergency Care"], specs: ["General Surgery", "Orthopaedics", "Ophthalmology"] },
+
+    // Kolkata (2)
+    { name: "AMRI Hospital", city: "Kolkata", tier: "PREMIUM", nabh: true, jci: false, beds: 400, rating: 4.3, reviews: 2800, lat: 22.5108, lng: 88.3635, addr: "JC Block, Salt Lake, Kolkata", strengths: ["NABH Accredited", "Cardiac Centre", "Premium Care"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Gastroenterology", "Urology"] },
+    { name: "SSKM Hospital", city: "Kolkata", tier: "BUDGET", nabh: false, jci: false, beds: 1800, rating: 3.6, reviews: 4500, lat: 22.5354, lng: 88.345, addr: "AJC Bose Rd, Kolkata", strengths: ["Government Hospital", "Largest in WB", "Affordable"], specs: ["General Surgery", "Orthopaedics", "Cardiology", "Oncology"] },
+
+    // Ahmedabad (2)
+    { name: "Sterling Hospital", city: "Ahmedabad", tier: "PREMIUM", nabh: true, jci: false, beds: 350, rating: 4.4, reviews: 2200, lat: 23.0339, lng: 72.5263, addr: "Gurukul Rd, Ahmedabad", strengths: ["NABH Accredited", "Multi-Specialty", "Modern OT"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Urology", "General Surgery"] },
+    { name: "VS Hospital", city: "Ahmedabad", tier: "BUDGET", nabh: false, jci: false, beds: 900, rating: 3.5, reviews: 3200, lat: 23.0258, lng: 72.5873, addr: "Paldi, Ahmedabad", strengths: ["Government Hospital", "Affordable", "Emergency"], specs: ["General Surgery", "Orthopaedics", "Ophthalmology", "Cardiology"] },
+
+    // Chandigarh (2)
+    { name: "PGIMER", city: "Chandigarh", tier: "MID", nabh: true, jci: false, beds: 2000, rating: 4.4, reviews: 6200, lat: 30.7649, lng: 76.7756, addr: "Sector 12, Chandigarh", strengths: ["Government Excellence", "Research Leader", "Affordable"], specs: ["Cardiology", "Orthopaedics", "Oncology", "Neurology", "Ophthalmology", "Urology", "General Surgery", "Gastroenterology"] },
+    { name: "Fortis Mohali", city: "Chandigarh", tier: "PREMIUM", nabh: true, jci: true, beds: 350, rating: 4.5, reviews: 2800, lat: 30.7114, lng: 76.6913, addr: "Phase 8, Mohali", strengths: ["JCI Accredited", "Cardiac Centre", "Premium Care"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Oncology"] },
+
+    // Kochi (2)
+    { name: "Amrita Hospital", city: "Kochi", tier: "PREMIUM", nabh: true, jci: true, beds: 450, rating: 4.5, reviews: 3100, lat: 10.0278, lng: 76.3113, addr: "AIMS Ponekkara, Kochi", strengths: ["JCI Accredited", "Teaching Hospital", "Multi-Specialty"], specs: ["Cardiology", "Orthopaedics", "Oncology", "Neurology", "Gastroenterology", "Urology"] },
+    { name: "Lakeshore Hospital", city: "Kochi", tier: "MID", nabh: true, jci: false, beds: 250, rating: 4.2, reviews: 1600, lat: 9.9816, lng: 76.3012, addr: "NH 47 Bypass, Maradu, Kochi", strengths: ["NABH Accredited", "GI Specialty", "Good Nursing"], specs: ["Gastroenterology", "General Surgery", "Orthopaedics", "Urology"] },
+
+    // Visakhapatnam (2)
+    { name: "CARE Hospital Vizag", city: "Visakhapatnam", tier: "MID", nabh: true, jci: false, beds: 300, rating: 4.1, reviews: 1400, lat: 17.7267, lng: 83.312, addr: "Ramnagar, Visakhapatnam", strengths: ["NABH Accredited", "Cardiac Centre", "Affordable"], specs: ["Cardiology", "Orthopaedics", "General Surgery", "Neurology"] },
+    { name: "Seven Hills Hospital", city: "Visakhapatnam", tier: "PREMIUM", nabh: true, jci: false, beds: 350, rating: 4.3, reviews: 1800, lat: 17.74, lng: 83.25, addr: "Rockdale Layout, Visakhapatnam", strengths: ["NABH Accredited", "Premium Care", "Emergency"], specs: ["Cardiology", "Orthopaedics", "Oncology", "Urology", "Neurology"] },
+
+    // Patna (2)
+    { name: "AIIMS Patna", city: "Patna", tier: "MID", nabh: true, jci: false, beds: 800, rating: 4.0, reviews: 2800, lat: 25.6219, lng: 84.9002, addr: "Phulwari Sharif, Patna", strengths: ["Government Excellence", "Research", "Affordable"], specs: ["Cardiology", "Orthopaedics", "Oncology", "Neurology", "General Surgery"] },
+    { name: "Paras HMRI Hospital", city: "Patna", tier: "PREMIUM", nabh: true, jci: false, beds: 300, rating: 4.2, reviews: 1600, lat: 25.6121, lng: 85.1565, addr: "Raja Bazar, Patna", strengths: ["NABH Accredited", "Multi-Specialty", "Premium Care"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Urology", "General Surgery"] },
+
+    // Indore (2)
+    { name: "Choithram Hospital", city: "Indore", tier: "MID", nabh: true, jci: false, beds: 500, rating: 4.0, reviews: 1900, lat: 22.7015, lng: 75.8634, addr: "Manik Bagh Rd, Indore", strengths: ["NABH Accredited", "Affordable", "Good Infrastructure"], specs: ["Cardiology", "Orthopaedics", "General Surgery", "Ophthalmology", "Urology"] },
+    { name: "Medanta Indore", city: "Indore", tier: "PREMIUM", nabh: true, jci: false, beds: 250, rating: 4.3, reviews: 1100, lat: 22.7533, lng: 75.8937, addr: "Super Corridor, Indore", strengths: ["NABH Accredited", "Modern", "Premium Care"], specs: ["Cardiology", "Orthopaedics", "Oncology", "Neurology"] },
+
+    // Thiruvananthapuram (2)
+    { name: "KIMS Trivandrum", city: "Thiruvananthapuram", tier: "PREMIUM", nabh: true, jci: false, beds: 400, rating: 4.4, reviews: 2400, lat: 8.5477, lng: 76.9115, addr: "Anayara, Thiruvananthapuram", strengths: ["NABH Accredited", "Cardiac Centre", "Premium Care"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Oncology", "Gastroenterology"] },
+    { name: "Govt Medical College Hospital", city: "Thiruvananthapuram", tier: "BUDGET", nabh: false, jci: false, beds: 1200, rating: 3.7, reviews: 3200, lat: 8.5074, lng: 76.9477, addr: "Chalai, Thiruvananthapuram", strengths: ["Government Hospital", "Teaching Hospital", "Affordable"], specs: ["General Surgery", "Orthopaedics", "Cardiology", "Ophthalmology"] },
+
+    // Guwahati (2)
+    { name: "GNRC Hospital", city: "Guwahati", tier: "MID", nabh: true, jci: false, beds: 300, rating: 4.1, reviews: 1200, lat: 26.1598, lng: 91.7659, addr: "Dispur, Guwahati", strengths: ["NABH Accredited", "Best in NE India", "Multi-Specialty"], specs: ["Cardiology", "Orthopaedics", "Neurology", "General Surgery", "Urology"] },
+    { name: "Nemcare Hospital", city: "Guwahati", tier: "MID", nabh: true, jci: false, beds: 200, rating: 3.9, reviews: 800, lat: 26.183, lng: 91.7458, addr: "Bhangagarh, Guwahati", strengths: ["NABH Accredited", "Cardiac Centre", "Affordable"], specs: ["Cardiology", "Orthopaedics", "General Surgery"] },
+
+    // Varanasi (2)
+    { name: "BHU Hospital", city: "Varanasi", tier: "MID", nabh: true, jci: false, beds: 2500, rating: 4.0, reviews: 4000, lat: 25.2677, lng: 82.9913, addr: "Lanka, Varanasi", strengths: ["Government Excellence", "Teaching Hospital", "Affordable"], specs: ["Cardiology", "Orthopaedics", "General Surgery", "Oncology", "Neurology", "Ophthalmology"] },
+    { name: "Heritage Hospital", city: "Varanasi", tier: "PREMIUM", nabh: true, jci: false, beds: 200, rating: 4.1, reviews: 900, lat: 25.3176, lng: 83.01, addr: "Lanka Rd, Varanasi", strengths: ["NABH Accredited", "Premium Care", "Modern"], specs: ["Cardiology", "Orthopaedics", "Urology", "General Surgery"] },
+
+    // Surat (2)
+    { name: "BAPS Pramukh Swami Hospital", city: "Surat", tier: "MID", nabh: true, jci: false, beds: 350, rating: 4.2, reviews: 2100, lat: 21.2052, lng: 72.8311, addr: "Adajan, Surat", strengths: ["NABH Accredited", "Trust Hospital", "Affordable"], specs: ["Cardiology", "Orthopaedics", "General Surgery", "Ophthalmology", "Urology"] },
+    { name: "Kiran Hospital", city: "Surat", tier: "PREMIUM", nabh: true, jci: false, beds: 300, rating: 4.3, reviews: 1500, lat: 21.1869, lng: 72.7971, addr: "Katargam, Surat", strengths: ["NABH Accredited", "Premium Care", "Cardiac Centre"], specs: ["Cardiology", "Orthopaedics", "Neurology", "Oncology"] },
+
+    // Mangalore (2)
+    { name: "KMC Hospital", city: "Mangalore", tier: "MID", nabh: true, jci: false, beds: 500, rating: 4.2, reviews: 2000, lat: 12.8715, lng: 74.8428, addr: "Ambedkar Circle, Mangalore", strengths: ["NABH Accredited", "Teaching Hospital", "Multi-Specialty"], specs: ["Cardiology", "Orthopaedics", "General Surgery", "Neurology", "Ophthalmology"] },
+    { name: "AJ Hospital", city: "Mangalore", tier: "MID", nabh: true, jci: false, beds: 300, rating: 4.0, reviews: 1200, lat: 12.8983, lng: 74.8367, addr: "Kuntikana, Mangalore", strengths: ["NABH Accredited", "Affordable", "Good Nursing"], specs: ["Cardiology", "Orthopaedics", "Urology", "General Surgery"] },
   ];
 
   for (const p of providerData) {

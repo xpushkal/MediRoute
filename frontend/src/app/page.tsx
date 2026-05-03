@@ -63,7 +63,7 @@ export default function Home() {
         {/* Navigation */}
         <nav className="flex items-center justify-between px-8 py-8 max-w-7xl mx-auto w-full absolute top-0 left-0 right-0 z-50">
           <div className="text-xl font-medium tracking-tight text-primary">MediRoute</div>
-          <button className="text-sm font-medium hover:text-primary transition-colors">Menu</button>
+          <button onClick={() => router.push("/navigator")} className="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Get Started</button>
         </nav>
 
         {/* Hero Section */}

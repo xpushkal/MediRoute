@@ -12,17 +12,30 @@ export const OPENROUTER_CONFIG = {
   apiKey: process.env.OPENROUTER_API_KEY || "",
 };
 
-// ── Rate Limiter (in-memory, per IP) ────────────────────────────────────
+// ── Rate Limiter (in-memory, per IP, with auto-cleanup) ─────────────────
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_MAX = 15;       // max requests per window
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const MAX_ENTRIES = 10_000;      // cap to prevent memory exhaustion
+
+function cleanRateLimitMap() {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.resetTime) rateLimitMap.delete(key);
+  }
+}
+
+// Auto-cleanup every 5 minutes
+setInterval(cleanRateLimitMap, 5 * 60_000);
 
 export function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now > entry.resetTime) {
+    // Evict oldest if at capacity
+    if (rateLimitMap.size >= MAX_ENTRIES) cleanRateLimitMap();
     rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
     return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
   }

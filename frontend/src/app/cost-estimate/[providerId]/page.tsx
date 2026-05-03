@@ -43,9 +43,12 @@ export default function CostEstimatePage() {
         age: clinicalState.age,
       }),
     })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Server error (${r.status})`);
+        return r.json();
+      })
       .then(setData)
-      .catch(console.error)
+      .catch((e) => console.error("Cost estimate fetch failed:", e))
       .finally(() => setLoading(false));
   }, [providerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
