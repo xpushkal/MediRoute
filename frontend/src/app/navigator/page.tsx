@@ -24,13 +24,17 @@ export default function Navigator() {
   const [error, setError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const initRef = useRef(false);
 
   const {
     query, chatHistory, addMessage, clinicalState, setClinicalState, setQuery,
   } = useJourneyStore();
 
-  // Seed first message on mount
+  // Seed first message on mount (guarded against Strict Mode double-fire)
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
     if (chatHistory.length === 0) {
       const welcome: ChatMessage = {
         id: "welcome",
