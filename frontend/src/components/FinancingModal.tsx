@@ -25,7 +25,7 @@ export default function FinancingModal({ estimatedAmount, totalRange, onClose }:
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": "mediroute-lender-key-2024",
+          "x-api-key": "medi-lender-demo-key-2025",
         },
         body: JSON.stringify({
           name, phone,

@@ -9,10 +9,19 @@ import QuickReply from "@/components/QuickReply";
 import TypingIndicator from "@/components/TypingIndicator";
 import { useJourneyStore, ChatMessage } from "@/store/useJourneyStore";
 
+// Quick-reply options for common first queries
+const STARTER_SUGGESTIONS = [
+  "Chest pain when climbing stairs",
+  "Knee replacement cost in Pune",
+  "Best heart hospital in Delhi",
+  "Cataract surgery options",
+];
+
 export default function Navigator() {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +37,7 @@ export default function Navigator() {
         role: "assistant",
         content:
           "Hello, I'm MediRoute AI — your healthcare navigation assistant.\n\nI can help you understand your symptoms, find the right hospitals, and get realistic cost estimates.\n\nPlease describe what you're experiencing, or tell me about a procedure you're looking into.",
+        quickReplies: STARTER_SUGGESTIONS,
         timestamp: Date.now(),
       };
       addMessage(welcome);
@@ -50,6 +60,7 @@ export default function Navigator() {
 
   async function sendMessage(text: string) {
     if (!text.trim() || isLoading) return;
+    setError(null);
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -62,16 +73,23 @@ export default function Navigator() {
     setIsLoading(true);
 
     try {
-      const messages = [...chatHistory, userMsg].map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const messages = [...chatHistory, userMsg]
+        .filter((m) => m.id !== "welcome") // Don't send welcome to LLM
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
 
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: "Network error" }));
+        throw new Error(errData.error || `Server error (${res.status})`);
+      }
 
       const data = await res.json();
 
@@ -110,11 +128,15 @@ export default function Navigator() {
           setTimeout(() => router.push("/results"), 1500);
         }
       }
-    } catch {
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : "Something went wrong";
+      setError(errMsg);
       addMessage({
         id: `error-${Date.now()}`,
         role: "assistant",
-        content: "Something went wrong. Please try again.",
+        content: errMsg.includes("API_KEY")
+          ? "The AI service is not configured yet. Please add your OpenRouter API key to the .env file."
+          : `Something went wrong: ${errMsg}. Please try again.`,
         timestamp: Date.now(),
       });
     } finally {
@@ -126,6 +148,15 @@ export default function Navigator() {
     e.preventDefault();
     sendMessage(input);
   }
+
+  // Find the last message with quickReplies that hasn't been answered
+  const lastQuickReplyMsg = [...chatHistory].reverse().find(
+    (m) => m.role === "assistant" && m.quickReplies && m.quickReplies.length > 0
+  );
+  const showQuickReplies =
+    lastQuickReplyMsg &&
+    chatHistory[chatHistory.length - 1]?.id === lastQuickReplyMsg.id &&
+    !isLoading;
 
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col">
@@ -178,7 +209,31 @@ export default function Navigator() {
           <ChatBubble key={msg.id} role={msg.role} content={msg.content} />
         ))}
 
+        {/* Quick Reply chips */}
+        {showQuickReplies && lastQuickReplyMsg && (
+          <QuickReply
+            options={lastQuickReplyMsg.quickReplies!}
+            onSelect={(opt) => sendMessage(opt)}
+          />
+        )}
+
         {isLoading && <TypingIndicator />}
+
+        {/* Retry button on error */}
+        {error && !isLoading && (
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => {
+                const lastUserMsg = [...chatHistory].reverse().find((m) => m.role === "user");
+                if (lastUserMsg) sendMessage(lastUserMsg.content);
+              }}
+              className="text-sm text-primary font-medium hover:underline cursor-pointer"
+            >
+              ↻ Retry last message
+            </button>
+          </div>
+        )}
+
         <div ref={chatEndRef} />
       </div>
 

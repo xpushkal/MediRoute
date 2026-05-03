@@ -149,6 +149,11 @@ export default function Results() {
                   tier={p.tier.toLowerCase() as "budget" | "mid" | "premium"}
                   estimate={p.costEstimate}
                   tags={p.strengths}
+                  rating={p.rating}
+                  reviewCount={p.reviewCount}
+                  nabh={p.nabh}
+                  jci={p.jci}
+                  waitDays={p.waitDays}
                   onSelect={() => handleSelectProvider(p)}
                 />
               ))

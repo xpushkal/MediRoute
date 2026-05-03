@@ -104,6 +104,7 @@ export default function CostEstimatePage() {
               totalRange={data.estimate.totalRange}
               confidence={data.estimate.confidence}
               components={data.estimate.components.map((c) => ({ label: c.label, range: c.range }))}
+              riskFlags={data.estimate.riskFlags}
             />
           </div>
 
